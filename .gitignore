@@ -112,7 +112,7 @@ dmypy.json
 
 .idea
 tests/data/fasttext/*.bin
-models/*.tar.gz
+# models/*.tar.gz
 results/*
 /.pytype/
 
