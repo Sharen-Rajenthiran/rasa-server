@@ -1,0 +1,13 @@
+recipe: default.v1
+language: en
+assistant_id: descriptive-list
+pipeline:
+- name: CompactLLMCommandGenerator
+  llm:
+    model_group: rasa_command_generation_model
+  flow_retrieval:
+    active: false
+policies:
+- name: FlowPolicy
+action_endpoint:
+  url: "http://localhost:5055/webhook"

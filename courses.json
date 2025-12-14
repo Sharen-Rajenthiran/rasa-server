@@ -1,0 +1,10 @@
+[
+  {
+    "course_code": "MECS0033",
+    "course_name": "Artificial Intelligence",
+    "faculty": "Computing",
+    "credits": 3,
+    "prerequisites": [],
+    "semester": 1
+  }
+]

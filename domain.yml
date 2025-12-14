@@ -1,0 +1,44 @@
+version: "3.1"
+
+slots:
+  course_code:
+    type: text
+    mappings:
+      - type: from_llm
+  
+  student_email:
+    type: text
+    mappings:
+      - type: from_llm
+  
+  semester:
+    type: text
+    mappings:
+      - type: from_llm
+
+  notification_type:
+    type: text
+    mappings:
+      - type: from_llm
+
+responses:
+  utter_ask_course_code:
+    - text: "Could you please provide the course code? (e.g., MECS0033)"
+
+  utter_ask_student_email:
+    - text: "To send you the alert, I need your UTM email address."
+
+  utter_ask_semester:
+    - text: "Which semester do you need the study plan for?"
+
+  utter_ask_notification_type:
+    - text: "What kind of updates would you like to receive? (e.g., Registration Dates, Deadlines)"
+
+  utter_registration_dates:
+    # Exact dates from your architecture overview [cite: 235]
+    - text: "The course registration period for Semester 1, 2025/2026 is from 22 September 2025 to 25 September 2025."
+
+actions:
+  - action_get_course_info
+  - action_get_study_plan
+  - action_notification_api

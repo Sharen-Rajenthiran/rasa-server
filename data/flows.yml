@@ -1,0 +1,32 @@
+flows:
+  check_course_details:
+    description: Retrieve detailed information about a course using its course code. Handles queries about prerequisites, credit hours, or sections.
+    steps:
+      - collect: course_code
+        description: The course code (e.g. MECS0033)
+      - action: action_get_course_info
+        next: END
+
+  get_study_plan_guidance:
+    description: Get course recommendations or study plan suggestions for a specific semester.
+    steps:
+      - collect: semester
+        description: The semester number (e.g. 1, 2, or 3)
+      - action: action_get_study_plan
+        next: END
+
+  subscribe_to_notifications:
+    description: Register the student's email to receive automated alerts for registration dates or deadlines.
+    steps:
+      - collect: student_email
+        description: The student's valid UTM email address. Extract this EXACTLY as the user typed it. Do not correct spelling or names.
+      - collect: notification_type
+        description: The type of alert (e.g., registration dates, exam schedule, general updates).
+      - action: action_notification_api
+        next: END
+
+  check_registration_dates:
+    description: check when the course registration period opens or closes.
+    steps:
+      - action: utter_registration_dates
+        next: END
