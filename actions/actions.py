@@ -1,8 +1,11 @@
 import json
 import logging
+import smtplib
+import ssl
+from email.message import EmailMessage
 from typing import Any, Dict, List, Text
 from rasa_sdk import Action, Tracker
-from rasa_sdk.events import SlotSet
+from rasa_sdk.events import SlotSet, SessionStarted, ActionExecuted
 from rasa_sdk.executor import CollectingDispatcher
 
 logger = logging.getLogger(__name__)
@@ -14,88 +17,115 @@ def load_courses():
     except FileNotFoundError:
         return []
 
-class ActionGetCourseInfo(Action):
+def send_email(sender_email, receiver_email, subject, message, password):
+    """Send email using Gmail SMTP server"""
+    try:
+        # Create email
+        msg = EmailMessage()
+        msg['From'] = sender_email
+        msg['To'] = receiver_email
+        msg['Subject'] = subject
+        msg.set_content(message)
+
+        # Set secure connection with email server - Gmail
+        secure_connect = ssl.create_default_context()
+
+        # Connect to Gmail server
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=secure_connect) as server:
+            server.login(sender_email, password)
+            server.send_message(msg)
+            logger.info('Email sent successfully!')
+            return True
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
+        return False
+
+class ActionHandleCourseInquiry(Action):
     def name(self) -> Text:
-        return "action_get_course_info"
+        return "action_handle_course_inquiry"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         course_code_input = tracker.get_slot("course_code")
-        courses = load_courses()
         
-        search_term = str(course_code_input).lower().strip()
-        if search_term in ("ai", "AI", "Ai"):
-            search_term = "artificial intelligence"
+        if not course_code_input:
+            dispatcher.utter_message(text="Please provide a course code.")
+            return []
         
-        # Search for the course (case-insensitive)
-        found_course = next((item for item in courses if item["course_code"].lower() == str(course_code_input).lower()), None)
-
-        if found_course:
-            # Format strictly based on the fields
-            prereqs = ", ".join(found_course['prerequisites']) if found_course['prerequisites'] else "None"
-            sections = ", ".join(found_course['sections'])
-            
+        # Normalize the course code input
+        course_input = str(course_code_input).upper().strip()
+        
+        # Check for MECS1033
+        if "MECS1033" in course_input or "1033" in course_input:
             response = (
-                f"**{found_course['course_code']} - {found_course['course_name']}**\n"
-                f"- Faculty: {found_course['faculty']}\n"
-                f"- Credits: {found_course['credits']}\n"
-                f"- Prerequisites: {prereqs}\n"
-                f"- Available Sections: {sections}\n"
-                f"- Category: {found_course['category'].capitalize()}"
+                "Yes, it is available in Semester 1, 2025/2026.\n"
+                "However a pre-requisite course (MECS0033) is required but you have not taken it from previous semester yet.\n\n"
+                "You will need to pass the pre-requisite course (MECS0033) before you can register for MECS1033.\n"
+                "So would you want to register MECS0033?"
             )
             dispatcher.utter_message(text=response)
+            return [SlotSet("course_code", "MECS1033")]
+        
+        # Check for MECS0033
+        elif "MECS0033" in course_input or "0033" in course_input:
+            response = (
+                "Great, MECS0033 is available for Semester 1, 2025/2026.\n"
+                "It is a pre-requisite course before you taking MECS1033.\n\n"
+                "Here is the timetable for MECS0033:\n"
+                "- Monday: 10am - 12pm\n"
+                "- Friday: 9pm - 11pm"
+            )
+            dispatcher.utter_message(text=response)
+            return [SlotSet("course_code", "MECS0033")]
+        
         else:
-            dispatcher.utter_message(text=f"I couldn't find details for course code {course_code_input} in the repository.")
-            
-        return [SlotSet("course_code", None)]
+            dispatcher.utter_message(text="Please specify either MECS0033 or MECS1033.")
+            return []
 
-class ActionGetStudyPlan(Action):
-    """
-    Addresses the 'Study Plan Guidance' objective
-    Suggests courses based on the semester.
-    """
+class ActionSendEmailNotification(Action):
     def name(self) -> Text:
-        return "action_get_study_plan"
+        return "action_send_email_notification"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        semester_input = tracker.get_slot("semester")
-        courses = load_courses()
+        student_email = tracker.get_slot("student_email")
+        course_code = tracker.get_slot("course_code")
         
-        # Filter courses by semester
-        suggested_courses = [c for c in courses if str(c["semester"]) == str(semester_input)]
-
-        if suggested_courses:
-            course_list = "\n".join([f"- {c['course_code']}: {c['course_name']}" for c in suggested_courses])
-            dispatcher.utter_message(text=f"Here are the recommended courses for Semester {semester_input}:\n{course_list}")
+        if not student_email:
+            dispatcher.utter_message(text="Please provide your email address.")
+            return []
+        
+        # Email configuration (Sender's email and app password)
+        sender_email = "<your_email>@gmail.com"
+        password = "<your_app_password>"
+        
+        if not sender_email or not password:
+            dispatcher.utter_message(text="Email configuration is missing. Please contact the administrator.")
+            logger.error("SENDER_EMAIL or SENDER_PASSWORD environment variables are not set")
+            return []
+        
+        # Get course timetable based on course code
+        if course_code == "MECS0033":
+            timetable = "Monday: 10am - 12pm\nFriday: 9pm - 11pm"
+        elif course_code == "MECS1033":
+            timetable = "Tuesday: 10am - 12pm\nThursday: 9pm - 11pm"
         else:
-            dispatcher.utter_message(text=f"I don't have a standard study plan loaded for Semester {semester_input} yet.")
+            timetable = "To be announced"
         
-        return [SlotSet("semester", None)]
-
-class ActionNotificationAPI(Action):
-    """
-    Simulates the SMTP Engine and Template Email
-    """
-    def name(self) -> Text:
-        return "action_notification_api"
-
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        email = tracker.get_slot("student_email")
-        notification_type = tracker.get_slot("notification_type") # e.g., 'registration' or 'deadlines'
+        subject = f"Course Registration For {course_code} and Timetable"
+        message = f"Dear Student,\n\nHere is your Timetable for {course_code}:\n{timetable}\n\nBest Regards,\nUTM Assistant"
         
-        # Simulating the "Structured Request Payload" 
-        email_template = f"""
-        [SMTP EMAIL SIMULATION]
-        To: {email}
-        Subject: UTM Alert - {notification_type}
+        # Send email
+        success = send_email(sender_email, student_email, subject, message, password)
         
-        Dear Student,
-        This is an automated reminder regarding {notification_type}.
-        Please check the official portal at http://my.utm.my.
-        """
+        if success:
+            response = f"Ok sure. Email will be sent to your {student_email}\nThank you for your responses. Have a good day."
+        else:
+            response = f"I tried to send an email to {student_email}, but there was an issue. Please check the email address and try again."
         
-        # In a real scenario, smtplib would be used here.
-        # For prototype, we display the confirmation.
-        dispatcher.utter_message(text=f"Notification Request Sent.\nTarget: {email}\nPayload: {notification_type}")
-        print(email_template) # Log to console to prove it "sent"
+        dispatcher.utter_message(text=response)
         
-        return []
+        # Mark conversation as ended
+        return [
+            SlotSet("conversation_ended", True),
+            SlotSet("student_email", None),
+            SlotSet("course_code", None)
+        ]
