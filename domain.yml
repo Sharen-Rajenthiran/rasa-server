@@ -11,34 +11,68 @@ slots:
     mappings:
       - type: from_llm
   
-  semester:
+  has_taken_mecs0033:
+    type: bool
+    mappings:
+      - type: from_llm
+
+  wants_email_alert:
+    type: bool
+    mappings:
+      - type: from_llm
+
+  confirm_timetable:
     type: text
     mappings:
       - type: from_llm
 
-  notification_type:
+  conversation_ended:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: custom
+
+  followup:
     type: text
+    mappings:
+      - type: from_llm
+
+  wants_mecs0033:
+    type: bool
     mappings:
       - type: from_llm
 
 responses:
+  utter_course_registration:
+    - text: "Thank you for your inquiry. The course registration period for Semester 1, 2025/2026 is from 22-25 September 2025.\nPlease ensure you complete your course registration within this period. You can access the registration portal at http://amd.utm.my"
+
+  utter_ask_followup:
+    - text: "Is there anything else that you would like to know about the registration process?"
+
+  utter_course_information:
+    - text: "OK, we offer two courses in Semester 1, 2025/2026:\n1. MECS0033 Artificial Intelligence (Pre-req)\n2. MECS1033 Advanced Artificial Intelligence (Core)"
+
   utter_ask_course_code:
-    - text: "Could you please provide the course code? (e.g., MECS0033)"
+    - text: "Which course are you interested to register?"
+
+  utter_ask_confirm_timetable:
+    - text: "Is there any changes for the time-table?"
 
   utter_ask_student_email:
-    - text: "To send you the alert, I need your UTM email address."
+    - text: "Could you please provide your UTM Email address ?"
 
-  utter_ask_semester:
-    - text: "Which semester do you need the study plan for?"
+  utter_ask_wants_email_alert:
+    - text: "Would you like to have an alert email to be sent once your course registration has been approved ?"
 
-  utter_ask_notification_type:
-    - text: "What kind of updates would you like to receive? (e.g., Registration Dates, Deadlines)"
+  utter_anything_else:
+    - text: "Is there anything else you would like to know?"
 
-  utter_registration_dates:
-    # Exact dates from your architecture overview [cite: 235]
-    - text: "The course registration period for Semester 1, 2025/2026 is from 22 September 2025 to 25 September 2025."
+  utter_free_chitchat_response:
+    - text: ""
+
+  utter_end_conversation:
+    - text: "Thank you for your responses. Have a good day."
 
 actions:
-  - action_get_course_info
-  - action_get_study_plan
-  - action_notification_api
+  - action_handle_course_inquiry
+  - action_send_email_notification

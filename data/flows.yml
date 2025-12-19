@@ -1,32 +1,42 @@
 flows:
-  check_course_details:
-    description: Retrieve detailed information about a course using its course code. Handles queries about prerequisites, credit hours, or sections.
+  course_registration_flow:
+    description: Handle course registration inquiries
     steps:
+      - action: utter_course_registration
+      - collect: followup
+        description: Student's response with "Course Information"
+      - action: utter_course_information
       - collect: course_code
-        description: The course code (e.g. MECS0033)
-      - action: action_get_course_info
-        next: END
+        description: The course code (MECS0033 or MECS1033)
+      - action: action_handle_course_inquiry
+      - collect: confirm_timetable
+        description: Student's response to whether they want timetable changes (Yes/No)
+      - collect: wants_email_alert
+        description: Student's response to whether they want an email alert (Yes/No)
+      - collect: student_email
+        description: The student's UTM email address. Extract this EXACTLY as the user typed it.
+      - action: action_send_email_notification
 
-  get_study_plan_guidance:
-    description: Get course recommendations or study plan suggestions for a specific semester.
+  course_information_flow:
+    description: Show available courses and get course selection
     steps:
-      - collect: semester
-        description: The semester number (e.g. 1, 2, or 3)
-      - action: action_get_study_plan
+      - action: utter_course_information
+      - collect: course_code
+        description: The course code (MECS0033 or MECS1033)
+      - action: action_handle_course_inquiry
+      - collect: confirm_timetable
+        description: Student's response to whether they want timetable changes (Yes/No)
+      - collect: wants_email_alert
+        description: Student's response to whether they want an email alert (Yes/No)
+      - collect: student_email
+        description: The student's UTM email address. Extract this EXACTLY as the user typed it.
+      - action: action_send_email_notification
         next: END
 
-  subscribe_to_notifications:
-    description: Register the student's email to receive automated alerts for registration dates or deadlines.
+  email_notification_flow:
+    description: Send email notification to student
     steps:
       - collect: student_email
-        description: The student's valid UTM email address. Extract this EXACTLY as the user typed it. Do not correct spelling or names.
-      - collect: notification_type
-        description: The type of alert (e.g., registration dates, exam schedule, general updates).
-      - action: action_notification_api
-        next: END
-
-  check_registration_dates:
-    description: check when the course registration period opens or closes.
-    steps:
-      - action: utter_registration_dates
+        description: The student's UTM email address. Extract this EXACTLY as the user typed it.
+      - action: action_send_email_notification
         next: END
