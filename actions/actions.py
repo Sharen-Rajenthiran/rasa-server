@@ -8,6 +8,11 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet, SessionStarted, ActionExecuted
 from rasa_sdk.executor import CollectingDispatcher
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 def load_courses():
@@ -88,14 +93,17 @@ class ActionSendEmailNotification(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         student_email = tracker.get_slot("student_email")
         course_code = tracker.get_slot("course_code")
+
+        if student_email == "sharren@graduate.utm.my":
+            student_email = "sharen@graduate.utm.my"
         
         if not student_email:
             dispatcher.utter_message(text="Please provide your email address.")
             return []
         
         # Email configuration (Sender's email and app password)
-        sender_email = "<your_email>@gmail.com"
-        password = "<your_app_password>"
+        sender_email = os.getenv("SENDER")
+        password = os.getenv("GOOGLE_APP_PASSWORD")
         
         if not sender_email or not password:
             dispatcher.utter_message(text="Email configuration is missing. Please contact the administrator.")

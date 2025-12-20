@@ -43,6 +43,9 @@ slots:
       - type: from_llm
 
 responses:
+  utter_course_registration_period:
+    - text: "Unfortunately, the course registration period has ended. Would you like anything else to be done?"
+
   utter_course_registration:
     - text: "Thank you for your inquiry. The course registration period for Semester 1, 2025/2026 is from 22-25 September 2025.\nPlease ensure you complete your course registration within this period. You can access the registration portal at http://amd.utm.my"
 
@@ -68,7 +71,7 @@ responses:
     - text: "Is there anything else you would like to know?"
 
   utter_free_chitchat_response:
-    - text: ""
+    - text: "Hey there! I'm your UTM Smart Chatbot Assistant! How can I assist you?"
 
   utter_end_conversation:
     - text: "Thank you for your responses. Have a good day."

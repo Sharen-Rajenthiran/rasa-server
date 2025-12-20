@@ -2,6 +2,7 @@ flows:
   course_registration_flow:
     description: Handle course registration inquiries
     steps:
+      - action: utter_course_registration_period 
       - action: utter_course_registration
       - collect: followup
         description: Student's response with "Course Information"
